@@ -176,7 +176,7 @@ st.text_area(
 user_input = st.session_state.sql_editor.strip()
 
 # =========================================
-# Toolbar (NO container → evita reruns)
+# Toolbar
 # =========================================
 
 col1, col2, col3, col4, col5 = st.columns([1.2, 1.2, 1.2, 1.2, 1.2])
@@ -253,10 +253,13 @@ if btn_execute:
         except Exception as error:
             st.error(f"SQL Error: {error}")
 
+
+# Uncomment this section if you're having errors with the EXECUTE Button
 # DEBUG 
-st.write("DEBUG user_input:", repr(user_input))
-st.write("DEBUG tables:", st.session_state.get("tables"))
-st.write("DEBUG last_sql:", st.session_state.get("last_sql"))
+
+#st.write("DEBUG user_input:", repr(user_input))
+#st.write("DEBUG tables:", st.session_state.get("tables"))
+#st.write("DEBUG last_sql:", st.session_state.get("last_sql"))
 
 # =========================================
 # 2. Explain SQL
@@ -378,3 +381,4 @@ Database:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; color:gray;'>Open source project</p>", unsafe_allow_html=True)
+
