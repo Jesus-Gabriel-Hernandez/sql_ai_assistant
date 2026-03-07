@@ -27,7 +27,7 @@ This AI‑powered SQLite IDE lets you practice SQL while learning interactively.
 - Python 3.10 or higher  
 - Ollama installed  
 - Llama 3.1 model downloaded  
-- Graphviz installed (for ERD generation)  
+- Mermaid.js installed (for ERD generation)  
 - All dependencies from `requirements.txt`
 
 ---
@@ -77,7 +77,7 @@ streamlit run final_project.py
 - SQLite for the Local database engine
 - Ollama for the Local LLM runtime
 - Llama 3.1 for the Natural language, SQL and explanations
-- Graphviz for the ERD generation
+- Mermaid.js for the ERD generation
 - Pandas for the Data handling
 - Python 
 
@@ -118,7 +118,7 @@ The project includes a curated set of dependencies for:
 - Streamlit
 - Pandas
 - Ollama client
-- Graphviz
+- Mermaid.js
 - Ollama integration
 - Utility libraries
 (Already included in the repository.)
@@ -159,7 +159,7 @@ Este IDE de SQLite potenciado por IA te permite practicar SQL mientras aprendes 
 - Python 3.10 o superior  
 - Ollama instalado  
 - Modelo Llama 3.1 descargado  
-- Graphviz instalado (para generar ERDs)  
+- Mermaid.js instalado (para generar ERDs)  
 - Dependencias de `requirements.txt`  
 
 ---
@@ -205,7 +205,7 @@ streamlit run final_project.py
 - SQLite como motor de base de datos local
 - Ollama para la Ejecución local de modelos LLM
 - Llama 3.1 para Lenguaje natural, SQL y explicaciones
-- Graphviz para la generación de diagramas ERD
+- Mermaid.js para la generación de diagramas ERD
 - Pandas que Maneja los datos
 
 📦 Qué Cubre el Proyecto y Por Qué Es Útil
@@ -244,7 +244,7 @@ El proyecto incluye un conjunto de dependencias seleccionadas para:
 - Streamlit
 - Pandas
 - Cliente de Ollama
-- Graphviz
+- Mermaid.js
 - Integración con Ollama
 - Librerías utilitarias
 (Ya incluidas en el repositorio.)
