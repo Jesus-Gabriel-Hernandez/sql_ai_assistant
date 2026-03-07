@@ -104,10 +104,23 @@ if "sql_editor" not in st.session_state:
 
 uploaded_file = st.file_uploader("📁 Upload a .db file (optional)", type="db")
 
+# If the user deletes the file, revert to the default database
+if uploaded_file is None and "conn" in st.session_state:
+    try:
+        st.session_state.conn.close()
+    except:
+        pass
+
+    st.session_state.conn = connect_sqlite_db("northwind.db")
+    st.session_state.db_path = "northwind.db"   # Default SQL DB
+    st.session_state["tables"] = list_tables(st.session_state.conn)
+    st.session_state["real_schema"] = get_schema_for_llm(st.session_state.conn)
+
 def load_database(uploaded_file=None, default_file="northwind.db"):
 
     if "conn" not in st.session_state:
         st.session_state.conn = connect_sqlite_db(default_file)
+        st.session_state.db_path = default_file   # Default SQL DB
 
     if uploaded_file:
 
@@ -127,6 +140,7 @@ def load_database(uploaded_file=None, default_file="northwind.db"):
             f.write(uploaded_file.getbuffer())
 
         st.session_state.conn = connect_sqlite_db(temp_path)
+        st.session_state.db_path = temp_path   # Default SQL DB
 
         # Update tables instantly (NO rerun)
         st.session_state["tables"] = list_tables(st.session_state.conn)
@@ -213,47 +227,44 @@ if btn_execute:
     else:
 
         if is_sql_query(user_input):
-            sql = user_input
+            sql_query = user_input
         else:
             real_schema = st.session_state.get("real_schema", get_schema_for_llm(data_base))
-            sql = nlp_to_sql(user_input, real_schema)
+            sql_query = nlp_to_sql(user_input, real_schema)
 
         st.subheader("SQL code")
-        st.code(sql, language="sql")
+        st.code(sql_query, language="sql")
 
+        # Avoid the database is locked error using with sql.connect(...)
         try:
-            cursor = data_base.cursor()
-            cursor.execute(sql)
-            data_base.commit()
+            with sql.connect(st.session_state.db_path, timeout=5) as conn:
+                cursor = conn.cursor()
+                cursor.execute(sql_query)
 
-            # Save the last query
-            st.session_state["last_sql"] = sql
+                st.session_state["last_sql"] = sql_query
 
-            # Get results if possible
-            if cursor.description:
-                rows = cursor.fetchall()
-                columns = [desc[0] for desc in cursor.description]
-            else:
-                rows = None
-                columns = None
+                if cursor.description:
+                    rows = cursor.fetchall()
+                    columns = [desc[0] for desc in cursor.description]
+                else:
+                    rows = None
+                    columns = None
 
-            st.session_state["last_result"] = rows
-            st.session_state["last_columns"] = columns
+                st.session_state["last_result"] = rows
+                st.session_state["last_columns"] = columns
 
-            # Update tables and schema
-            st.session_state["tables"] = list_tables(data_base)
-            st.session_state["real_schema"] = get_schema_for_llm(data_base)
+                st.session_state["tables"] = list_tables(conn)
+                st.session_state["real_schema"] = get_schema_for_llm(conn)
 
-            if rows:
-                df = pd.DataFrame(rows, columns=columns)
-                st.dataframe(df, width="stretch", hide_index=True)
-            else:
-                st.info("Query executed successfully (no results).")
+                if rows:
+                    df = pd.DataFrame(rows, columns=columns)
+                    st.dataframe(df, width="stretch", hide_index=True)
+                else:
+                    st.info("Query executed successfully (no results).")
 
         except Exception as error:
             st.error(f"SQL Error: {error}")
-
-
+            
 # Uncomment this section if you're having errors with the EXECUTE Button
 # DEBUG 
 
@@ -269,36 +280,36 @@ if btn_explain:
 
     st.markdown("### 💬 Explanation")
 
-    sql = st.session_state.get("last_sql")
+    sql_query = st.session_state.get("last_sql")
     rows = st.session_state.get("last_result")
     columns = st.session_state.get("last_columns")
 
-    if not sql:
+    if not sql_query:
         editor_text = st.session_state.sql_editor.strip()
         if not editor_text:
             st.warning("Execute a SQL query first or write one in the editor.")
             st.stop()
 
         real_schema = st.session_state.get("real_schema", get_schema_for_llm(data_base))
-        sql = editor_text if is_sql_query(editor_text) else nlp_to_sql(editor_text, real_schema)
-        st.session_state["last_sql"] = sql
+        sql_query = editor_text if is_sql_query(editor_text) else nlp_to_sql(editor_text, real_schema)
+        st.session_state["last_sql"] = sql_query
         rows = None
         columns = None
 
     real_schema = st.session_state.get("real_schema", get_schema_for_llm(data_base))
 
-    explanation = explain_sql(sql, columns, rows, real_schema)
+    explanation = explain_sql(sql_query, columns, rows, real_schema)
     st.subheader("Explanation based on real data")
     st.markdown(explanation)
 
-    llm_explanation = use_llama(sql, role_system=modes["explain"])
+    llm_explanation = use_llama(sql_query, role_system=modes["explain"])
     st.subheader("LLM Explanation (teacher mode)")
     st.info(llm_explanation)
 
     visual_prompt = f"""
 A simple whiteboard-style diagram that visually explains the following SQL query:
 
-{sql}
+{sql_query}
 """
 
     img_path = generate_image(visual_prompt)
@@ -307,7 +318,7 @@ A simple whiteboard-style diagram that visually explains the following SQL query
         st.image(img_path, caption="Generated Diagram")
 
 # =========================================
-# 3. Generate SQL from Natural Language
+# 3. Generate SQL
 # =========================================
 
 if btn_generate_sql and user_input.strip():
@@ -381,4 +392,3 @@ Database:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 st.markdown("<p style='text-align:center; color:gray;'>Open source project</p>", unsafe_allow_html=True)
-
